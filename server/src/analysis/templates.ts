@@ -1,4 +1,4 @@
-import type { AnalysisPlan, AnalysisTemplate, PlanAttribute } from '@workbench/shared';
+import type { AnalysisPlan, AnalysisTemplate, ComparisonMode, PlanAttribute } from '@workbench/shared';
 
 /**
  * Attribute library + the five built-in instruction templates.
@@ -51,6 +51,8 @@ const GENERIC_KEYS = [
 
 interface TemplateDef extends AnalysisTemplate {
   keys: string[];
+  /** Defaults to 'consistency'. */
+  mode?: ComparisonMode;
 }
 
 const TEMPLATE_DEFS: TemplateDef[] = [
@@ -77,6 +79,7 @@ const TEMPLATE_DEFS: TemplateDef[] = [
     label: 'Financial position',
     instruction: 'Compare the financial position of the companies represented in the documents.',
     keys: ['company_name', 'financial_year', 'annual_revenue', 'net_profit', 'total_assets', 'total_liabilities'],
+    mode: 'side_by_side', // the documents describe different companies
   },
   {
     id: 'identity_discrepancies',
@@ -98,7 +101,7 @@ function attributesFor(keys: string[]): PlanAttribute[] {
 
 export function templatePlan(templateId: string): AnalysisPlan | null {
   const def = TEMPLATE_DEFS.find((t) => t.id === templateId);
-  return def ? { source: 'template', templateId: def.id, attributes: attributesFor(def.keys) } : null;
+  return def ? { source: 'template', templateId: def.id, comparisonMode: def.mode ?? 'consistency', attributes: attributesFor(def.keys) } : null;
 }
 
 /** Templates match on id, or on the exact instruction text (user clicked a chip but no id was sent). */
@@ -109,7 +112,7 @@ export function findTemplateId(instruction: string, templateId?: string | null):
 }
 
 export function fallbackPlan(): AnalysisPlan {
-  return { source: 'fallback', templateId: null, attributes: attributesFor(GENERIC_KEYS) };
+  return { source: 'fallback', templateId: null, comparisonMode: 'consistency', attributes: attributesFor(GENERIC_KEYS) };
 }
 
 const norm = (s: string) =>

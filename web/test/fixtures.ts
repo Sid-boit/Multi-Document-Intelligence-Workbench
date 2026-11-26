@@ -116,7 +116,7 @@ export const result: AnalysisResult = {
     E3: { ...ev('E3', 'd1', 'D1', 'form.pdf', 'Northwind Ltd', 'unverified'), attribute: 'company_name' },
   },
   warnings: ['D2 (cert.png): Low OCR confidence (55%).'],
-  meta: { provider: 'ollama', model: 'qwen3.5:9b', promptVersion: 'v2', planSource: 'template', durationMs: 12_345 },
+  meta: { provider: 'ollama', model: 'qwen3.5:9b', promptVersion: 'v2', planSource: 'template', comparisonMode: 'consistency', durationMs: 12_345 },
 };
 
 export const analysis: AnalysisView = {

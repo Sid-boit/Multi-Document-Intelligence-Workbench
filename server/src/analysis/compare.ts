@@ -1,5 +1,5 @@
 import { distance } from 'fastest-levenshtein';
-import type { ComparisonRow, Finding, PlanAttribute, Severity, ValueType } from '@workbench/shared';
+import type { ComparisonMode, ComparisonRow, Finding, PlanAttribute, Severity, ValueType } from '@workbench/shared';
 import {
   formatMoney,
   isAdjacentTransposition,
@@ -162,7 +162,13 @@ const describe = (cells: AttributeCell[]) => cells.map((c) => `${c.alias} (${c.d
  * the largest cluster (earliest on ties, i.e. the first selected document) is the
  * reference, and every other cluster yields one derived discrepancy.
  */
-export function compareAttribute(attr: PlanAttribute, cells: AttributeCell[], ctx: CompareContext): { row: ComparisonRow; findings: Finding[] } {
+export function compareAttribute(
+  attr: PlanAttribute,
+  cells: AttributeCell[],
+  ctx: CompareContext,
+  mode: ComparisonMode = 'consistency',
+): { row: ComparisonRow; findings: Finding[] } {
+  if (mode === 'side_by_side') return sideBySide(attr, cells);
   const found = cells.filter((c): c is AttributeCell & { value: string } => c.value !== null && c.value.trim() !== '');
   const clusters: (AttributeCell & { value: string })[][] = [];
   for (const cell of found) {
@@ -231,6 +237,23 @@ export function compareAttribute(attr: PlanAttribute, cells: AttributeCell[], ct
     row: { attribute: attr.key, label: attr.label, valueType: attr.valueType, rowStatus, cells: rowCells },
     findings,
   };
+}
+
+/**
+ * Side-by-side mode (documents describe different entities, e.g. two companies): values are
+ * reported next to each other; differences are expected, so no discrepancies are derived.
+ */
+function sideBySide(attr: PlanAttribute, cells: AttributeCell[]): { row: ComparisonRow; findings: Finding[] } {
+  const isFound = (c: AttributeCell) => c.value !== null && c.value.trim() !== '';
+  const rowCells = cells.map((c) => ({
+    documentId: c.documentId,
+    value: c.value,
+    evidenceHandle: c.evidenceHandle,
+    status: isFound(c) ? ('reported' as const) : ('missing' as const),
+  }));
+  const foundCount = cells.filter(isFound).length;
+  const rowStatus: ComparisonRow['rowStatus'] = foundCount === 0 ? 'not_found' : foundCount < cells.length ? 'partial' : 'compared';
+  return { row: { attribute: attr.key, label: attr.label, valueType: attr.valueType, rowStatus, cells: rowCells }, findings: [] };
 }
 
 /**

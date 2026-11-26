@@ -1,4 +1,4 @@
-import { Check, Equal, Minus, X } from 'lucide-react';
+import { Check, Circle, Equal, Minus, X } from 'lucide-react';
 import { useState } from 'react';
 import type { AnalysisResult, CellStatus, RowStatus } from '@workbench/shared';
 import { cx } from './ui';
@@ -8,6 +8,7 @@ const CELL: Record<CellStatus, { icon: typeof Check; cls: string; label: string 
   equivalent: { icon: Equal, cls: 'bg-emerald-50/60 text-emerald-900', label: 'equivalent' },
   mismatch: { icon: X, cls: 'bg-rose-50 text-rose-900', label: 'conflicts' },
   missing: { icon: Minus, cls: 'text-slate-400', label: 'not found' },
+  reported: { icon: Circle, cls: 'text-slate-900', label: 'reported' },
 };
 
 const ROW_LABEL: Record<RowStatus, string> = {
@@ -15,22 +16,29 @@ const ROW_LABEL: Record<RowStatus, string> = {
   inconsistent: 'Inconsistent',
   partial: 'Partly found',
   not_found: 'Not found',
+  compared: 'Side by side',
 };
 
 export function ComparisonMatrix({ result, onOpenEvidence }: { result: AnalysisResult; onOpenEvidence: (handle: string) => void }) {
   const [onlyIssues, setOnlyIssues] = useState(false);
+  const sideBySide = result.meta.comparisonMode === 'side_by_side';
   const rows = onlyIssues ? result.comparison.filter((r) => r.rowStatus === 'inconsistent') : result.comparison;
 
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-slate-500">
-          Values are normalised before comparison (e.g. “£1.18m” ≈ “1,180,000”). Click a value to see where it appears in the document.
+          {sideBySide
+            ? 'Side-by-side comparison: the documents describe different entities, so differences are expected and are not reported as discrepancies.'
+            : 'Values are normalised before comparison (e.g. “£1.18m” ≈ “1,180,000”).'}{' '}
+          Click a value to see where it appears in the document.
         </p>
+        {!sideBySide && (
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
           <input type="checkbox" checked={onlyIssues} onChange={(e) => setOnlyIssues(e.target.checked)} className="accent-indigo-600" />
           Inconsistent only
         </label>
+        )}
       </div>
       <div className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="min-w-full text-sm">
@@ -94,7 +102,7 @@ export function ComparisonMatrix({ result, onOpenEvidence }: { result: AnalysisR
         </table>
       </div>
       <p className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
-        {(Object.keys(CELL) as CellStatus[]).map((k) => {
+        {(Object.keys(CELL) as CellStatus[]).filter((k) => (sideBySide ? k === 'reported' || k === 'missing' : k !== 'reported')).map((k) => {
           const Icon = CELL[k].icon;
           return (
             <span key={k} className="inline-flex items-center gap-1">

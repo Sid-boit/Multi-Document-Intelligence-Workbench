@@ -98,6 +98,21 @@ describe('compareAttribute', () => {
   });
 });
 
+describe('compareAttribute in side-by-side mode (different entities)', () => {
+  it('reports values next to each other without deriving discrepancies', () => {
+    const { row, findings } = compareAttribute(attr('annual_revenue', 'money'), [cell('D1', '1180000'), cell('D2', '2450000')], ctx, 'side_by_side');
+    expect(findings).toEqual([]);
+    expect(row.rowStatus).toBe('compared');
+    expect(row.cells.map((c) => c.status)).toEqual(['reported', 'reported']);
+  });
+
+  it('marks rows found in only some documents as partial', () => {
+    const { row } = compareAttribute(attr('net_profit', 'money'), [cell('D1', '96000'), cell('D2', null)], ctx, 'side_by_side');
+    expect(row.rowStatus).toBe('partial');
+    expect(row.cells.map((c) => c.status)).toEqual(['reported', 'missing']);
+  });
+});
+
 describe('checkExpiry', () => {
   const expiry = attr('licence_expiry', 'date', 'Licence expiry date');
 

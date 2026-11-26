@@ -65,9 +65,17 @@ export const PlanAttribute = z.object({
 });
 export type PlanAttribute = z.infer<typeof PlanAttribute>;
 
+/**
+ * consistency  – the documents should agree (e.g. an application and its evidence); differences are discrepancies.
+ * side_by_side – the documents describe different entities (e.g. two companies); values are compared, not reconciled.
+ */
+export const ComparisonMode = z.enum(['consistency', 'side_by_side']);
+export type ComparisonMode = z.infer<typeof ComparisonMode>;
+
 export const AnalysisPlan = z.object({
   source: z.enum(['template', 'llm', 'fallback']),
   templateId: z.string().nullable(),
+  comparisonMode: ComparisonMode.default('consistency'),
   attributes: z.array(PlanAttribute).min(1).max(20),
 });
 export type AnalysisPlan = z.infer<typeof AnalysisPlan>;
@@ -150,7 +158,7 @@ export const Finding = z
   });
 export type Finding = z.infer<typeof Finding>;
 
-export const CellStatus = z.enum(['match', 'equivalent', 'mismatch', 'missing']);
+export const CellStatus = z.enum(['match', 'equivalent', 'mismatch', 'missing', 'reported']);
 export type CellStatus = z.infer<typeof CellStatus>;
 
 export const ComparisonCell = z.object({
@@ -161,7 +169,7 @@ export const ComparisonCell = z.object({
 });
 export type ComparisonCell = z.infer<typeof ComparisonCell>;
 
-export const RowStatus = z.enum(['consistent', 'inconsistent', 'partial', 'not_found']);
+export const RowStatus = z.enum(['consistent', 'inconsistent', 'partial', 'not_found', 'compared']);
 export type RowStatus = z.infer<typeof RowStatus>;
 
 export const ComparisonRow = z.object({
@@ -193,6 +201,7 @@ export const AnalysisResult = z
       model: z.string().nullable(),
       promptVersion: z.string(),
       planSource: z.enum(['template', 'llm', 'fallback']),
+      comparisonMode: ComparisonMode.default('consistency'),
       durationMs: z.number(),
     }),
   })

@@ -117,3 +117,14 @@ describe('downloadText', () => {
     expect((click.mock.instances[0] as unknown as HTMLAnchorElement).download).toBe('a.txt');
   });
 });
+
+describe('side-by-side export', () => {
+  it('uses the side-by-side legend and the • marker', () => {
+    const sbs = structuredClone(result);
+    sbs.meta.comparisonMode = 'side_by_side';
+    sbs.comparison[0]!.cells = sbs.comparison[0]!.cells.map((c) => ({ ...c, status: 'reported' as const }));
+    const md = toMarkdown(sbs);
+    expect(md).toContain('Side-by-side comparison of different entities');
+    expect(md).toContain('• LIC-48213 (E1)');
+  });
+});

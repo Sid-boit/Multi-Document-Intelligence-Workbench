@@ -4,6 +4,7 @@ import { AnalysisView, type LlmDocExtraction, type LlmSynthesis } from '@workben
 import { labelledForAnotherAttribute } from '../src/analysis/deterministic.js';
 import { ATTRIBUTE_LIBRARY, enrichAttribute, inferValueType } from '../src/analysis/templates.js';
 import { literalValue } from '../src/analysis/verify.js';
+import { valueSpan } from '../src/analysis/pipeline.js';
 import type { GenerateRequest, LlmProvider } from '../src/llm/provider.js';
 import type { ChunkRecord, FactRecord } from '../src/types.js';
 import { createTestApp, sample } from './helpers.js';
@@ -29,8 +30,15 @@ class MisbehavingProvider implements LlmProvider {
         values.push({ attribute: 'licence_number', status: 'found', value: 'LIC-48231', chunkRef: ref, quote: 'Licence number: LIC-48231' });
       }
       if (text.includes('Columns: company')) {
-        // Reformatted number with an invented currency symbol.
-        values.push({ attribute: 'annual_revenue', status: 'found', value: '$1,180,000', chunkRef: ref, quote: 'revenue=1180000' });
+        // Reformatted number with an invented currency symbol, quoting the whole CSV row: the value
+        // sits in the "revenue" cell, not the row's first ("company") cell.
+        values.push({
+          attribute: 'annual_revenue',
+          status: 'found',
+          value: '$1,180,000',
+          chunkRef: ref,
+          quote: 'Row 1: company=Northwind Fabrication Ltd; financial_year=FY2025; revenue=1180000',
+        });
       }
       if (text.includes('Dear Sir or Madam')) {
         // Prose-only value the rule-based parser cannot attribute (no label), plus an invented quote.
@@ -90,6 +98,9 @@ describe('analysis pipeline with an imperfect model', () => {
     // 2. Literal value from the source, not the model's reformatting.
     expect(cellOf('annual_revenue', 'financials_2025.csv').value).toBe('1180000');
 
+    // 2b. A whole-row quote is checked at the value's own cell, so it is not misattributed.
+    expect(r.warnings.join('\n')).not.toMatch(/labels it "company"/);
+
     // 3. Gaps the model missed are filled by exact-label rules (bank address → postcode discrepancy).
     expect(cellOf('address', 'bank_reference.md').value).toBe('14 Harbour Rd, Bristol BS1 4QB');
     expect(r.discrepancies.some((f) => f.rule === 'address.postcode')).toBe(true);
@@ -104,7 +115,10 @@ describe('analysis pipeline with an imperfect model', () => {
     expect(r.summaryPoints.map((p) => p.title)).toEqual(['Real point']);
     expect(r.warnings.join('\n')).toMatch(/Hallucinated point/);
 
-    // 6. "Missing X" observations are not repeated per document.
+    // 6. Observations whose quotes cannot be found are dropped and reported once per document.
+    expect(r.warnings.filter((w) => /observation\(s\) were dropped/.test(w)).length).toBeLessThanOrEqual(docs.length);
+
+    // 7. "Missing X" observations are not repeated per document.
     expect(r.perDocument.flatMap((p) => p.findings).some((f) => f.title === 'Missing signature')).toBe(false);
   });
 });
@@ -115,6 +129,18 @@ describe('literalValue', () => {
     expect(literalValue('Expiry date: 31/03/2026', '31 March 2026')).toBe('31/03/2026');
     expect(literalValue('Licence number: LIC-48213', 'LIC-48213')).toBe('LIC-48213');
     expect(literalValue('nothing relevant', 'ABC')).toBe('ABC');
+  });
+});
+
+describe('valueSpan', () => {
+  it('narrows a located quote to the position of the value', () => {
+    const text = 'Row 1: company=Acme Ltd; revenue=2450000; net_profit=310000';
+    const span = valueSpan(text, 0, text.length, '310000');
+    expect(text.slice(span.start, span.end)).toBe('310000');
+  });
+
+  it('falls back to the whole quote when the value is not inside it', () => {
+    expect(valueSpan('abc def', 0, 7, 'xyz')).toEqual({ start: 0, end: 7 });
   });
 });
 

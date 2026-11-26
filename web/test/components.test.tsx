@@ -238,3 +238,16 @@ describe('ExportTxtButton', () => {
     expect(screen.getByRole('button', { name: /^Export \.txt/ })).toBeInTheDocument();
   });
 });
+
+describe('ComparisonMatrix in side-by-side mode', () => {
+  it('explains that differences are expected and shows values as reported', () => {
+    const sbs = structuredClone(result);
+    sbs.meta.comparisonMode = 'side_by_side';
+    sbs.comparison = [{ ...sbs.comparison[0]!, rowStatus: 'compared', cells: sbs.comparison[0]!.cells.map((c) => ({ ...c, status: 'reported' as const })) }];
+    render(<ComparisonMatrix result={sbs} onOpenEvidence={vi.fn()} />);
+    expect(screen.getByText(/Side-by-side comparison/)).toBeInTheDocument();
+    expect(screen.getByText('Side by side')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Inconsistent only')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Licence number in D2: LIC-48231 (reported)' })).toBeInTheDocument();
+  });
+});

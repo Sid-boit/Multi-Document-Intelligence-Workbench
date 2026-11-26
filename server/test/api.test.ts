@@ -157,6 +157,10 @@ describe('API: analyses (end-to-end with the mock provider)', () => {
     expect(analysis.plan?.templateId).toBe('financial_position'); // matched by instruction text
     const revenue = analysis.result!.comparison.find((r) => r.attribute === 'annual_revenue')!;
     expect(revenue.cells.map((c) => c.value)).toEqual(['1180000', '2450000']);
+    // Two different companies: compared side by side, differences are not "discrepancies".
+    expect(analysis.result!.meta.comparisonMode).toBe('side_by_side');
+    expect(revenue.rowStatus).toBe('compared');
+    expect(analysis.result!.discrepancies).toEqual([]);
 
     const custom = await analyse(t, docs.map((d) => d.id), 'Which company is more profitable?');
     expect(custom.status).toBe('completed');

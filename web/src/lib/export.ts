@@ -8,7 +8,7 @@ export const TIER_LABELS: Record<Tier, string> = {
   interpretation: 'AI interpretation',
 };
 
-const CELL_ICONS: Record<CellStatus, string> = { match: '✓', equivalent: '≈', mismatch: '✗', missing: '–' };
+const CELL_ICONS: Record<CellStatus, string> = { match: '✓', equivalent: '≈', mismatch: '✗', missing: '–', reported: '•' };
 const VERIFY_ICONS: Record<Evidence['verification'], string> = { exact: '✓', fuzzy: '~', unverified: '?' };
 
 const esc = (s: string) => s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
@@ -61,7 +61,11 @@ export function toMarkdown(r: AnalysisResult, section: ExportSection = 'all', in
     parts.push('# Document analysis');
     if (instruction) parts.push(`> ${instruction}`);
     parts.push(documentsBlock(r));
-    parts.push('Legend: ✓ match · ≈ equivalent · ✗ mismatch · – not found. Citations: [document · page · evidence, ✓ verified / ~ fuzzy / ? unverified]');
+    parts.push(
+      r.meta.comparisonMode === 'side_by_side'
+        ? 'Side-by-side comparison of different entities (• reported · – not found). Citations: [document · page · evidence, ✓ verified / ~ fuzzy / ? unverified]'
+        : 'Legend: ✓ match · ≈ equivalent · ✗ mismatch · – not found. Citations: [document · page · evidence, ✓ verified / ~ fuzzy / ? unverified]',
+    );
   }
   if (want('overview')) parts.push('## Summary', `_${TIER_LABELS.interpretation}_`, r.summary, list(r.summaryPoints, r, 'No summary points.'));
   if (want('comparison')) parts.push('## Comparison', comparisonTable(r));

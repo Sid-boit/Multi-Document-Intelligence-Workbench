@@ -181,14 +181,17 @@ async function execute(deps: PipelineDeps, analysisId: string): Promise<void> {
         for (const v of out.values) {
           if (v.attribute !== attr.key || v.status !== 'found' || !v.value?.trim()) continue;
           const loc = verifyCandidate({ quote: v.quote, value: v.value, chunkRef: v.chunkRef }, d);
+          const value = loc.verification === 'unverified' ? v.value.trim() : literalValue(loc.quote, v.value.trim());
           if (loc.charStart !== null && loc.charEnd !== null) {
-            const other = labelledForAnotherAttribute(attr, d.facts, loc.pageNo, loc.charStart, loc.charEnd, labelUniverse);
+            // Check the field label at the *value's* position, not the whole quote (a quoted
+            // CSV row or form line can span several labelled fields).
+            const span = valueSpan(pageText(loc.pageNo), loc.charStart, loc.charEnd, value);
+            const other = labelledForAnotherAttribute(attr, d.facts, loc.pageNo, span.start, span.end, labelUniverse);
             if (other) {
               warnings.push(`${d.alias}: the AI reported "${v.value}" as ${attr.label.toLowerCase()}, but the document labels it "${other}"; it was ignored.`);
               continue;
             }
           }
-          const value = loc.verification === 'unverified' ? v.value.trim() : literalValue(loc.quote, v.value.trim());
           llmChoices.push({ value, loc, source });
         }
       }
@@ -281,15 +284,16 @@ async function execute(deps: PipelineDeps, analysisId: string): Promise<void> {
     // Model observations (interpretation) – kept only with verified evidence location.
     // "Missing X" observations are skipped: absence is reported once, across documents.
     let obsCount = 0;
+    const droppedObs: string[] = [];
     for (const { out, source } of parts) {
       for (const o of out.observations) {
         if (/^\s*(missing|no)\b/i.test(o.title) || obsCount >= MAX_OBSERVATIONS_PER_DOC) continue;
-        obsCount++;
         const loc = verifyCandidate({ quote: o.quote, value: null, chunkRef: o.chunkRef }, d);
         if (loc.verification === 'unverified') {
-          warnings.push(`${d.alias}: an AI observation was dropped because its quote was not found in the document ("${o.title}").`);
+          droppedObs.push(o.title);
           continue;
         }
+        obsCount++;
         const handle = registry.add({ ...evBase, ...loc, source, attribute: null, value: null });
         docFindings.push({
           id: nextId(),
@@ -308,6 +312,11 @@ async function execute(deps: PipelineDeps, analysisId: string): Promise<void> {
         observationsForSynthesis.push({ alias: d.alias, title: o.title, detail: o.detail, evidence: handle });
       }
     }
+    if (droppedObs.length > 0) {
+      warnings.push(
+        `${d.alias}: ${droppedObs.length} AI observation(s) were dropped because their quotes were not found in the document (${droppedObs.map((t) => `"${t}"`).join(', ')}).`,
+      );
+    }
     perDocument.push({ documentId: d.doc.id, findings: docFindings });
   }
 
@@ -317,7 +326,7 @@ async function execute(deps: PipelineDeps, analysisId: string): Promise<void> {
   const comparison: ComparisonRow[] = [];
   const derived: Finding[] = [];
   for (const attr of plan.attributes) {
-    const { row, findings } = compareAttribute(attr, cellsByAttr.get(attr.key) ?? [], ctx);
+    const { row, findings } = compareAttribute(attr, cellsByAttr.get(attr.key) ?? [], ctx, plan.comparisonMode);
     comparison.push(row);
     derived.push(...findings);
   }
@@ -389,6 +398,7 @@ async function execute(deps: PipelineDeps, analysisId: string): Promise<void> {
   const aliasOf = new Map(docs.map((d) => [d.doc.id, d.alias]));
   const synthesisInput: SynthesisInput = {
     instruction: analysis.instruction,
+    comparisonMode: plan.comparisonMode,
     documents: docs.map((d) => ({ alias: d.alias, name: d.doc.displayName })),
     comparison: comparison.map((r) => ({
       attribute: r.attribute,
@@ -438,7 +448,7 @@ async function execute(deps: PipelineDeps, analysisId: string): Promise<void> {
     perDocument,
     evidence,
     warnings,
-    meta: { provider: llm.name, model: llm.model, promptVersion: PROMPT_VERSION, planSource: plan.source, durationMs: Date.now() - started },
+    meta: { provider: llm.name, model: llm.model, promptVersion: PROMPT_VERSION, planSource: plan.source, comparisonMode: plan.comparisonMode, durationMs: Date.now() - started },
   });
   repo.completeAnalysis(analysisId, result);
 }
@@ -474,6 +484,13 @@ export function windowChunks(chunks: ChunkRecord[], budget: number): ChunkRecord
   return windows.length > 0 ? windows : [[]];
 }
 
+/** Narrow a located quote span to where the value itself appears in it (falls back to the whole span). */
+export function valueSpan(text: string, start: number, end: number, value: string): { start: number; end: number } {
+  const v = value.trim().toLowerCase();
+  const i = v ? text.slice(start, end).toLowerCase().indexOf(v) : -1;
+  return i >= 0 ? { start: start + i, end: start + i + v.length } : { start, end };
+}
+
 function lineAround(text: string, start: number, end: number): string {
   const ls = Math.max(text.lastIndexOf('\n', start - 1) + 1, start - 100);
   const nl = text.indexOf('\n', end);
@@ -498,5 +515,5 @@ export function sanitizePlan(p: LlmPlan): AnalysisPlan {
     attributes.push(enriched);
     if (attributes.length >= 15) break;
   }
-  return attributes.length > 0 ? { source: 'llm', templateId: null, attributes } : fallbackPlan();
+  return attributes.length > 0 ? { source: 'llm', templateId: null, comparisonMode: 'consistency', attributes } : fallbackPlan();
 }
