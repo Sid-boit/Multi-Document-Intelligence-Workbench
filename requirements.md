@@ -1,6 +1,6 @@
 # Submission Requirements Checklist: Multi-Document Intelligence Workbench
 
-Target: a good-quality app built in **about 1–2 hours** (see `plan.md` §13). Tick every box before you share the repository.
+Target: a well-engineered app that meets every requirement in the brief. Tick every box before you share the repository.
 Section numbers like "plan §7" point to `plan.md`. `plan-full.md` is the longer roadmap and is used for the README productionisation section.
 
 ---
@@ -10,7 +10,7 @@ Section numbers like "plan §7" point to `plan.md`. `plan-full.md` is the longer
 - [ ] Node 22, pnpm 10, git, and `gh auth status` all work. Docker is not needed.
 - [ ] Ollama is running, `qwen3.5:9b` is loaded, and the structured-output (`format`) smoke test returns valid JSON.
 - [ ] The tesseract `eng` data is cached, and the heavy packages are pre-warmed (optional).
-- [ ] The GitHub repo is created **first** (in the first 10 minutes), and screen and AI-tool records are shared if required.
+- [ ] The GitHub repo is created, and screen and AI-tool records are shared if required.
 
 ## B. Mandatory technology
 
@@ -92,7 +92,7 @@ Section numbers like "plan §7" point to `plan.md`. `plan-full.md` is the longer
 - [ ] `samples/` (valid, invalid, `expected.json`, README) plus the generator script
 - [ ] `server/src/db/schema.sql` (applied automatically at boot)
 - [ ] At least one meaningful automated test, passing
-- [ ] Clear commit history, one commit per phase (plan §13), Conventional Commits
+- [ ] Clear commit history, one commit per layer (README → Commit history)
 - [ ] `.gitignore` covers `node_modules`, `.env`, `var/`, and `dist/`
 - [ ] No real data, no secrets
 
@@ -103,14 +103,14 @@ Section numbers like "plan §7" point to `plan.md`. `plan-full.md` is the longer
 - [ ] Setup (`pnpm i`, `cp .env.example .env`, `ollama pull`, `pnpm samples`, `pnpm dev`, `pnpm test`, mock mode)
 - [ ] Assumptions
 - [ ] Completed functionality
-- [ ] Known limitations (including every item cut from plan §1 and §13)
+- [ ] Known limitations (including every out-of-scope item in plan §1)
 - [ ] Security considerations
 - [ ] How it would be productionised (from `plan-full.md`)
 - [ ] AI tools disclosure and the decisions you made personally (§H)
 
 ## H. Disclosure
 
-- [ ] **Tools**: Claude Code (Claude Opus 5.5) for planning and implementation; runtime Ollama `qwen3.5:9b`; any others actually used.
+- [ ] **Tools**: Claude Code (Claude Opus 5.5 and Claude Sonnet 5.5) for planning and implementation; runtime Ollama `qwen3.5:9b`; any others actually used.
 - [ ] **How they were used**: phase-by-phase prompting, with every diff reviewed, run, and committed by you.
 - [ ] **Decisions made personally.** Keep only the true ones and add your own:
   - [ ] Evidence-handle-only citations
@@ -122,7 +122,7 @@ Section numbers like "plan §7" point to `plan.md`. `plan-full.md` is the longer
   - [ ] Deviations from `plan.md`
 - [ ] Optionally commit `plan.md` and `requirements.md` under `docs/prep/`, labelled as AI-assisted planning.
 
-## I. Final check (last 5 minutes)
+## I. Final check
 
 - [ ] Clean clone → `pnpm i` → `cp .env.example .env` → `pnpm test` passes → `pnpm dev` runs
 - [ ] Upload the valid and invalid samples: statuses and reasons are correct

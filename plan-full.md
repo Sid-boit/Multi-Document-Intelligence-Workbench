@@ -1,6 +1,6 @@
 # Multi-Document Intelligence Workbench: Product & Engineering Plan
 
-> This plan has no time-box. The goal is a well-engineered application, not a 60-minute demo.
+> The long-term, production-grade design. `plan.md` describes the version that is built; this document is its roadmap.
 > Stack: **React** (frontend) + **Node.js** (backend), TypeScript throughout. AI runs on **local Ollama**.
 > Drafted with Claude Code (Opus 5.5). Disclose this in the README (see `requirements.md` §H).
 

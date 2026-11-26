@@ -1,13 +1,13 @@
 # Multi-Document Intelligence Workbench: Build Plan 
 
-> **Goal**: a *good* app built *fast*. Keep the design ideas that make the results trustworthy, and cut the infrastructure that only adds setup time.
+> **Goal**: a well-engineered app with a lean footprint. Keep the design ideas that make the results trustworthy, and leave out infrastructure that only adds setup cost.
 > Stack: **React** (Vite) + **Node** (Express 5), TypeScript everywhere, **SQLite**, local **Ollama**.
 > The longer production-grade design is in `plan-full.md`. Use it for the README "Productionisation" section and as the roadmap.
 > Drafted with Claude Code (Opus 5.5). Disclose this in the README.
 
 ---
 
-## 1. What we keep vs cut
+## 1. What is in scope vs out of scope
 
 **Keep (this is what makes it good):**
 1. **Per-document analysis first, then cross-document synthesis.** The model never gets one merged prompt.
@@ -21,18 +21,18 @@
 5. **Evidence viewer**: clicking a source shows the document page text with the quote highlighted.
 6. **Guarded uploads** (magic bytes, limits, safe storage) and per-file error reasons.
 
-**Cut for speed (listed under Known limitations / Roadmap):**
+**Out of scope for this version (listed under Known limitations / Roadmap):**
 - Postgres, pgvector, and embeddings: SQLite is used instead, and large documents are split into windows rather than retrieved by search.
 - Job queue and SSE: an in-process async run with polling replaces them.
 - Cases and multi-tenancy: there is one workspace.
 - Plan-approval UI, model switching, and analysis comparison.
-- DOCX and XLSX: DOCX is a stretch goal. OCR for scanned PDFs is cut.
+- DOCX and XLSX: not supported. OCR for scanned PDFs is not supported.
 - PDF bounding-box highlighting: highlighting is on the text view instead.
-- Playwright, CI, and the eval suite: a simple eval script is a stretch goal.
+- Playwright, CI, and an evaluation suite.
 
 ---
 
-## 2. Stack (chosen so Claude Code generates it quickly and correctly)
+## 2. Stack
 
 | Concern | Choice |
 |---|---|
@@ -40,7 +40,7 @@
 | Backend | Node 22, **Express 5** (async errors handled natively), `multer` (memory storage + limits), `zod` v4, `helmet`, `cors`, `express-rate-limit`, `p-limit` |
 | DB | **SQLite** through `better-sqlite3`, with plain SQL in `schema.sql` applied at boot |
 | File type | `file-type` (magic bytes) |
-| Parsing | `pdf-parse` (per-page text), `tesseract.js` (PNG/JPG OCR), `papaparse` (CSV), UTF-8 decode (TXT/MD). *Stretch*: `mammoth` (DOCX) |
+| Parsing | `pdf-parse` (per-page text), `tesseract.js` (PNG/JPG OCR), `papaparse` (CSV), UTF-8 decode (TXT/MD) |
 | Normalise | `chrono-node` (en-GB dates), `fastest-levenshtein` |
 | LLM | Ollama `/api/chat`, `format` = JSON schema from `z.toJSONSchema`, `think:false`, `temperature:0`. Plus a **Mock** provider |
 | Frontend | React 19 + Vite + TS, **Tailwind v4** (`@tailwindcss/vite`), `@tanstack/react-query`, `react-dropzone`, `lucide-react` |
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS llm_calls (
 CREATE INDEX IF NOT EXISTS idx_llm_cache ON llm_calls(cache_key, outcome);
 ```
 
-Findings and evidence are stored inside `analyses.result` as zod-validated JSON. This keeps the build fast, and the evidence still points at `pages` rows through `documentId`, `pageNo`, and character offsets.
+Findings and evidence are stored inside `analyses.result` as zod-validated JSON. This keeps the schema small, and the evidence still points at `pages` rows through `documentId`, `pageNo`, and character offsets.
 
 ---
 
@@ -545,41 +545,7 @@ The generator lives in `server/` because `pdfkit` and `sharp` are server dev-dep
 
 ---
 
-## 13. Build schedule (about 2 hours, one Claude Code session, commit at every checkpoint)
-
-| Time | Phase | Done when | Commit |
-|---|---|---|---|
-| 0:00–0:10 | `git init`, `gh repo create --private --source . --push`. pnpm workspaces, tsconfig, Vite React + Tailwind, Express skeleton, `.env.example`, `.gitignore`, `pnpm dev` | Blank web app and `/api/health` work | `chore: scaffold workspaces` |
-| 0:10–0:30 | `shared` schemas, `schema.sql` + db, guard, extractors, chunker, facts, document routes, `server/scripts/generate-samples.ts` + samples | `curl` upload of samples gives the right per-file statuses | `feat(server): guarded upload and extraction` / `chore: synthetic samples` |
-| 0:30–0:55 | LLM layer (Ollama + mock), templates, map, verify (+ hybrid choice in `deterministic.ts`), normalise/compare, synthesise, assembly in `pipeline.ts`, analyses routes | Analysis over samples completes with the mock, then with Ollama | `feat(server): evidence-linked multi-document analysis` |
-| 0:55–1:00 | `normalize`, `compare`, and `verify` tests | Tests pass | `test: normalisation, comparison, verification` |
-| 1:00–1:30 | UI: documents, composer, progress, results tabs, matrix, finding cards, tier badges, evidence drawer, copy | Full flow works in the browser | `feat(web): workbench UI` |
-| 1:30–1:40 | Remaining server tests (§12) + web tests | `pnpm test` passes | `test: upload guard, pipeline, end-to-end API and web components` |
-| 1:40–1:55 | README (all sections, disclosure), error and empty states, polish | n/a | `docs: README` |
-| 1:55–2:00 | Clean clone → install → test → dev smoke test → push | n/a | `chore: final` |
-
-**Order of cuts if over time** (record each one in Known limitations):
-1. Custom-instruction LLM plan (templates plus a generic plan only).
-2. Per-document windowing (truncate with a warning instead).
-3. Fuzzy quote matching (exact match plus whole-document search only).
-4. History list.
-5. Markdown export (keep JSON copy).
-6. The "Per document" tab.
-
-**Never cut**:
-- Map/reduce separation and evidence handles.
-- Tier labels and the evidence drawer.
-- Guard, copy, and tests.
-- README and `.env.example`.
-
-**Stretch, if time remains**:
-- DOCX through mammoth.
-- `pnpm eval` that runs `expected.json` against Ollama and prints recall.
-- Showing the analysis plan before results.
-
----
-
-## 14. `.env.example`
+## 13. `.env.example`
 
 ```dotenv
 # --- Server ---
@@ -608,7 +574,7 @@ LLM_CONCURRENCY=2
 
 ---
 
-## 15. Pre-flight (5 minutes before starting)
+## 14. Pre-flight checks
 
 - [ ] `ollama run qwen3.5:9b "OK"` loads the model. Run a structured-output curl smoke test with `"format": {...}, "think": false`.
 - [ ] `gh auth status`. Docker is **not** needed.
@@ -616,5 +582,5 @@ LLM_CONCURRENCY=2
 - [ ] Run tesseract once so `eng.traineddata` is cached.
 - [ ] Check the installed `pdf-parse` API version (v2: `new PDFParse({ data }).getText()` → `pages`). Fall back to `pdfjs-dist` if needed.
 
-## 16. README outline
-Overview with a screenshot. Architecture (diagram and pipeline). Setup. Assumptions. Completed functionality. Known limitations (including everything cut above). Security. Productionisation (summarise `plan-full.md` §18: Postgres + pgvector, queue + workers, S3 + AV scan, auth/RBAC, OCR for scanned PDFs, OTel, eval gate). Tests. AI tools disclosure and the decisions you made personally.
+## 15. README outline
+Overview with a screenshot. Architecture (diagram and pipeline). Setup. Assumptions. Completed functionality. Known limitations (including everything out of scope in §1). Security. Productionisation (summarise `plan-full.md` §18: Postgres + pgvector, queue + workers, S3 + AV scan, auth/RBAC, OCR for scanned PDFs, OTel, eval gate). Tests. Commit history. AI tools disclosure and the decisions you made personally.

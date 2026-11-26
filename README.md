@@ -344,22 +344,48 @@ The pipeline was also run against the real local model (`qwen3.5:9b`) over the C
 
 ---
 
+## Commit history
+
+The repository is organised so each layer is added as its own commit:
+
+| # | Commit | Contents |
+|---|---|---|
+| 1 | `839f3b7` Initial commit | Repository created on GitHub (one-line `README.md`) |
+| 2 | `a6c73ad` plan | `plan.md`, `plan-full.md` (planning documents) |
+| 3 | `c63e0c5` feat(server): add backend API with document ingestion and evidence-linked analysis | Workspace config (`package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `tsconfig.base.json`, `.gitignore`, `.env.example`), `shared/` (API contract) and `server/` (ingestion, analysis pipeline, LLM providers, SQLite, REST API, sample generator, 126 tests) — 61 files |
+| 4 | `4a9d19f` chore(samples): add synthetic documents, invalid files and golden findings | `samples/` — Case A and B documents, invalid and adversarial files, `expected.json`, README — 14 files |
+| 5 | `86f6d62` feat(web): add React workbench UI with traceable findings and copy/export | `web/` — React UI, typed API client, export helpers, 36 tests — 28 files |
+| 6 | `a041945` Readme files | `README.md` (full), `docs/screenshot.png`, `requirements.md` |
+| 7 | *(latest)* docs: complete AI disclosure and add commit history to README | README disclosure section and this commit history; time-box references removed from the planning documents |
+
+Notes:
+- Commits 3–5 depend on each other in order: `server/` imports `shared/`, and the end-to-end server tests read `samples/`, so the full test suite passes from commit 4 onwards (backend) and commit 5 onwards (whole repo).
+- The repository was set up after the application had been built, so the commits were made together at the end rather than progressively.
+
+---
+
 ## AI tools used and decisions made
 
-**Tools:**
-- **Claude Code (Claude Opus 5.5)** drafted the plan (`plan.md`, `requirements.md` in the parent folder) and generated most of the implementation and tests, under the developer's direction.
-- **Ollama `qwen3.5:9b`** is the runtime model used by the application.
+**AI tools**
+- **Claude Code** (Claude Opus 5.5, and Claude Sonnet 5.5 for some steps): drafted the plan (`plan.md`, `plan-full.md`, `requirements.md`), generated most of the implementation and tests, and drafted this README, working under my direction.
+- **Ollama `qwen3.5:9b`**: the runtime model used by the application.
 
-**Decisions made by the developer** (stated during planning):
-- Use a local LLM via Ollama for all AI features.
-- React frontend and Node backend, TypeScript throughout.
-- Aim for a well-engineered app rather than a 60-minute demo, within a budget of about 1–2 hours.
-- Repository initialisation, commit history and pushing are done by the developer.
+**Architectural decisions I made**
+- **Local-first AI.** All AI runs on a local Ollama model, so no document content leaves the machine. This was a requirement from the start, not an afterthought.
+- **Separate frontend and backend.** React frontend and Node backend, TypeScript on both sides, kept as separate processes that can be run independently (`pnpm dev:server`, `pnpm dev:web`) or together (`pnpm dev`).
+- **Scope.** A well-engineered application with a lean footprint. The heavier production design (Postgres + pgvector, job queue, object storage, auth) is kept as a documented roadmap in `plan-full.md` rather than built.
+- **Repository structure.** The application folder is the repository root (README, workspace config and `.env.example` at the top level), with the planning documents alongside it.
+- **Delivery in layers.** The history is organised so each layer stands on its own: backend + shared API contract, then synthetic samples, then the frontend, then documentation (see [Commit history](#commit-history)).
+- **Document processing as staged layers.** Documents go through fixed stages, not one big model call. Upload: guard → extract → chunk → deterministic facts. Analysis: plan → map (per document) → verify → compare → synthesise → assemble. I pushed for verify and compare to run in code before the AI summary, and for synthesis to cite only verified evidence handles.
 
-**Proposed by the AI assistant and accepted by the developer** (edit this list to reflect your own view):
-- A map → verify → compare → reduce pipeline in which synthesis may cite **only verified evidence handles**, so provenance holds by construction.
-- Three finding tiers (extracted / derived / interpretation), assigned by code rather than the model.
-- Deterministic normalisation and comparison rules before LLM synthesis, with a hybrid choice between rules and the model and a misattribution check.
-- SQLite for zero-setup review; templates for the five example instructions; a mock provider for offline tests.
+**Proposed by the AI assistant, reviewed and accepted by me**
+- A per-document → verify → compare → summarise pipeline in which the summary may cite **only verified evidence handles**, so every finding is traceable to its source.
+- Three finding tiers (extracted / derived / AI interpretation), assigned by code, not the model.
+- Rule-based normalisation and comparison before the AI summary, with checks that reject misattributed or reformatted AI answers.
+- SQLite for zero-setup review, templates for the five example instructions, and a mock AI provider so the tests run offline.
 
-> _TODO (developer): adjust the two lists above so they accurately reflect what you decided yourself, and add any changes you made after reviewing the generated code._
+**Review after generation**
+- I checked the generated repository layout against the plan (e.g. the root `node_modules` and files that had moved) and had `plan.md` updated to match the code.
+- I asked for the backend and frontend to be runnable separately, which added the `dev:server` / `dev:web` scripts.
+
+**Process note:** the repository was set up after the application was built, not at the start of the session, so the commits were made together near the end.
