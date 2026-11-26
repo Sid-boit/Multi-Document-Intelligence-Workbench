@@ -1,0 +1,20 @@
+{
+  "description": "Golden findings for the Case A documents (all data is fictional). Used by server/test/api.test.ts.",
+  "caseA": {
+    "documents": ["application_form.pdf", "accountant_letter.txt", "financials_2025.csv", "licence_certificate.png", "bank_reference.md"],
+    "templateId": "form_vs_supporting",
+    "reviewDate": "2026-11-26",
+    "expectedFindings": [
+      { "rule": "name.spelling_variant", "attribute": "applicant_name", "note": "Jonathan A. Smith vs Jonathon Smith" },
+      { "rule": "address.house_number", "attribute": "address", "note": "14 vs 41 Harbour Road" },
+      { "rule": "address.postcode", "attribute": "address", "note": "BS1 4QA vs BS1 4QB" },
+      { "rule": "identifier.transposition", "attribute": "licence_number", "note": "LIC-48213 vs LIC-48231" },
+      { "rule": "money.mismatch", "attribute": "annual_revenue", "note": "£1,250,000 vs £1.18m / 1180000" },
+      { "rule": "date.expired", "attribute": "licence_expiry", "note": "expired 31/03/2026" },
+      { "rule": "form.blank_field", "attribute": null, "note": "Signature and signature date blank" }
+    ],
+    "expectedConsistent": [
+      { "attribute": "company_name", "note": "'Northwind Fabrications Limited' is equivalent to 'Northwind Fabrication Ltd'" }
+    ]
+  }
+}
