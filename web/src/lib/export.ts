@@ -97,6 +97,53 @@ export function toJson(r: AnalysisResult, section: ExportSection = 'all'): strin
   return JSON.stringify({ documents: r.documents, [section]: data, evidence }, null, 2);
 }
 
+/**
+ * Plain-text rendering of the Markdown export: headings become underlined titles and
+ * emphasis markers are removed. Tables, citations and tier labels are kept, so the
+ * text file carries the same provenance as the copied output.
+ */
+export function toPlainText(r: AnalysisResult, section: ExportSection = 'all', instruction?: string): string {
+  return toMarkdown(r, section, instruction)
+    .split('\n')
+    .flatMap((line) => {
+      const h = /^(#{1,3})\s+(.*)$/.exec(line);
+      if (h) {
+        const title = h[2]!.trim();
+        const rule = h[1]!.length === 1 ? '=' : h[1]!.length === 2 ? '-' : '';
+        return rule ? [title.toUpperCase(), rule.repeat(title.length)] : [title];
+      }
+      if (/^\|(?:---\|)+$/.test(line)) return [line]; // table separator row
+      return [
+        line
+          .replace(/^> /, '')
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/(^|\s)_(.+?)_(?=\s|$)/g, '$1$2')
+          .replace(/\\\|/g, '|')
+          .replace(/^---$/, '-'.repeat(60)),
+      ];
+    })
+    .join('\n');
+}
+
+/** Build a safe, descriptive file name, e.g. "analysis-discrepancies-2026-11-26.txt". */
+export function exportFileName(section: ExportSection, date = new Date()): string {
+  return `analysis-${section === 'all' ? 'full' : section}-${date.toISOString().slice(0, 10)}.txt`;
+}
+
+/** Trigger a browser download of `text` as a UTF-8 .txt file. */
+export function downloadText(text: string, fileName: string): void {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 /** Copy text to the clipboard, falling back to a hidden textarea where the API is unavailable. */
 export async function copyText(text: string): Promise<void> {
   if (navigator.clipboard?.writeText) {

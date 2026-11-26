@@ -111,7 +111,7 @@ pnpm dev                        # API on :4000, web app on http://localhost:5173
   - ✓ (amber) approximate match, e.g. OCR noise
   - ? not verified
 - **Evidence viewer**: clicking a chip or a matrix cell opens a side panel with the full page text and the quoted text highlighted.
-- **Copy and export**: copy any tab, or everything, as **Markdown** (tables plus citations) or **JSON** (including the cited evidence).
+- **Copy and export**: copy any tab, or everything, as **Markdown** (tables plus citations) or **JSON** (including the cited evidence). The **Export .txt** button beside each Copy menu downloads the same content as a plain-text file (e.g. `analysis-discrepancies-2026-11-26.txt`), keeping the comparison table and source citations.
 - **History and links**: recent analyses can be reopened, and the open result is kept in the URL (`?analysis=<id>`).
 
 ---
@@ -243,7 +243,7 @@ samples/           synthetic documents, expected.json (golden findings)
 
 ## Testing
 
-`pnpm test` runs **162 tests**: 126 for the server and 36 for the web app. They are fully offline, using the mock LLM and a fake OCR engine.
+`pnpm test` runs **168 tests**: 126 for the server and 42 for the web app. They are fully offline, using the mock LLM and a fake OCR engine.
 
 | Area | Files |
 |---|---|
@@ -260,7 +260,7 @@ samples/           synthetic documents, expected.json (golden findings)
 | **Pipeline with a misbehaving model** (misattribution, reformatting, missed values, invented citations) | `pipeline.test.ts` |
 | **End-to-end API**: upload the samples (valid and invalid), analyse, assert every golden finding in `samples/expected.json` and that every finding resolves to evidence in an analysed document; injection document; AI offline | `api.test.ts` |
 | Config, blob storage, repository | `infra.test.ts` |
-| Web: export (Markdown/JSON, citations), clipboard fallback, highlight, pre-check, API client, components (badges, finding cards, matrix, copy menu, document list, composer, progress, results, evidence drawer) | `web/test/*` |
+| Web: export (Markdown/JSON/.txt, citations), clipboard fallback, file download, highlight, pre-check, API client, components (badges, finding cards, matrix, copy menu, export .txt button, document list, composer, progress, results, evidence drawer) | `web/test/*` |
 
 The pipeline was also run against the real local model (`qwen3.5:9b`) over the Case A samples, with the *Form vs supporting docs* template:
 - All 7 golden findings were detected.
@@ -287,7 +287,7 @@ The pipeline was also run against the real local model (`qwen3.5:9b`) over the C
 - [x] Independent per-document analysis **and** cross-document analysis
 - [x] Comparison matrix, consolidated summary, discrepancies, missing information, key values, per-document view
 - [x] Every finding cites its source: document, page and evidence handle, with a verified ✓, approximate ~ or unverified ? marker, and an evidence viewer that highlights the text
-- [x] Copy as Markdown (with citations) or JSON, per tab or for everything
+- [x] Copy as Markdown (with citations) or JSON, and export as a plain .txt file, per tab or for everything
 - [x] Graceful handling of unsupported, corrupt, empty, mis-encoded and disguised files
 - [x] Clear labelling of extracted / derived / interpretation tiers
 - [x] Live progress, analysis history, deep links (`?analysis=<id>`), AI-status indicator, rule-based fallback when the AI is offline
@@ -356,7 +356,8 @@ The repository is organised so each layer is added as its own commit:
 | 4 | `4a9d19f` chore(samples): add synthetic documents, invalid files and golden findings | `samples/` — Case A and B documents, invalid and adversarial files, `expected.json`, README — 14 files |
 | 5 | `86f6d62` feat(web): add React workbench UI with traceable findings and copy/export | `web/` — React UI, typed API client, export helpers, 36 tests — 28 files |
 | 6 | `a041945` Readme files | `README.md` (full), `docs/screenshot.png`, `requirements.md` |
-| 7 | *(latest)* docs: complete AI disclosure and add commit history to README | README disclosure section and this commit history; time-box references removed from the planning documents |
+| 7 | `2a28999` docs: complete AI disclosure and add commit history to README | README disclosure section and this commit history; time-box references removed from the planning documents |
+| 8 | *(latest)* feat(web): add plain-text (.txt) export beside the copy menu | `ExportTxtButton`, `toPlainText` / `downloadText` in `web/src/lib/export.ts`, 6 new tests; README, plan and requirements updated |
 
 Notes:
 - Commits 3–5 depend on each other in order: `server/` imports `shared/`, and the end-to-end server tests read `samples/`, so the full test suite passes from commit 4 onwards (backend) and commit 5 onwards (whole repo).

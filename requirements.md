@@ -39,7 +39,7 @@ Section numbers like "plan §7" point to `plan.md`. `plan-full.md` is the longer
 | [ ] | Missing-information report | Missing info tab |
 | [ ] | Key-value extraction | Key values tab |
 | [ ] | Source shown for every finding | Evidence chips `D2 · p1 · E7 ✓`; clicking one opens the drawer with the quote highlighted |
-| [ ] | Copy output | Copy as Markdown or JSON (per tab and for everything) and paste into an editor |
+| [ ] | Copy output | Copy as Markdown or JSON, or Export .txt (per tab and for everything); paste or open the file |
 | [ ] | Invalid files handled gracefully | Each `samples/invalid/*` file shows its specific reason, the rest of the batch still succeeds, and nothing crashes |
 | [ ] | Synthetic data only | `scripts/generate-samples.ts` and `samples/README.md` |
 

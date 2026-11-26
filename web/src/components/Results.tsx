@@ -4,6 +4,7 @@ import type { AnalysisView } from '@workbench/shared';
 import type { ExportSection } from '../lib/export';
 import { ComparisonMatrix } from './ComparisonMatrix';
 import { CopyMenu } from './CopyMenu';
+import { ExportTxtButton } from './ExportTxtButton';
 import { FindingList } from './FindingCard';
 import { TierLegend } from './TierBadge';
 import { cx } from './ui';
@@ -31,7 +32,10 @@ export function Results({ analysis, onOpenEvidence, notify }: { analysis: Analys
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <TierLegend />
-        <CopyMenu result={result} section="all" instruction={analysis.instruction} label="Copy all" onCopied={notify} />
+        <div className="flex items-center gap-2">
+          <CopyMenu result={result} section="all" instruction={analysis.instruction} label="Copy all" onCopied={notify} />
+          <ExportTxtButton result={result} section="all" instruction={analysis.instruction} label="Export all .txt" onExported={notify} />
+        </div>
       </div>
 
       {result.warnings.length > 0 && (
@@ -62,8 +66,9 @@ export function Results({ analysis, onOpenEvidence, notify }: { analysis: Analys
 
       <div role="tabpanel" className="min-h-40">
         {tab !== 'warnings' && (
-          <div className="mb-3 flex justify-end">
+          <div className="mb-3 flex justify-end gap-2">
             <CopyMenu result={result} section={tab} instruction={analysis.instruction} onCopied={notify} />
+            <ExportTxtButton result={result} section={tab} instruction={analysis.instruction} onExported={notify} />
           </div>
         )}
 

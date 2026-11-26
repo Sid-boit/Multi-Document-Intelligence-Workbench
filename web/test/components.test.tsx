@@ -9,6 +9,7 @@ import { Composer } from '../src/components/Composer';
 import { CopyMenu } from '../src/components/CopyMenu';
 import { DocumentList } from '../src/components/DocumentList';
 import { EvidenceDrawer } from '../src/components/EvidenceDrawer';
+import { ExportTxtButton } from '../src/components/ExportTxtButton';
 import { FindingCard } from '../src/components/FindingCard';
 import { ProgressPanel } from '../src/components/ProgressPanel';
 import { Results } from '../src/components/Results';
@@ -215,5 +216,25 @@ describe('EvidenceDrawer', () => {
     withQuery(<EvidenceDrawer evidence={result.evidence.E1!} onClose={onClose} />);
     await userEvent.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('ExportTxtButton', () => {
+  it('downloads the current section as a .txt file and confirms it', async () => {
+    const createObjectURL = vi.fn().mockReturnValue('blob:x');
+    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const onExported = vi.fn();
+    render(<ExportTxtButton result={result} section="discrepancies" onExported={onExported} />);
+    await userEvent.click(screen.getByRole('button', { name: /Export \.txt/ }));
+    expect(click).toHaveBeenCalled();
+    expect(await (createObjectURL.mock.calls[0]![0] as Blob).text()).toMatch(/^DISCREPANCIES/);
+    expect(onExported).toHaveBeenCalledWith(expect.stringMatching(/^Downloaded analysis-discrepancies-\d{4}-\d{2}-\d{2}\.txt$/));
+  });
+
+  it('sits beside the Copy menu in the results', () => {
+    render(<Results analysis={analysis} onOpenEvidence={vi.fn()} notify={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /Export all \.txt/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Export \.txt/ })).toBeInTheDocument();
   });
 });

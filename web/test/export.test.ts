@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { citation, copyText, toJson, toMarkdown } from '../src/lib/export';
+import { citation, copyText, downloadText, exportFileName, toJson, toMarkdown, toPlainText } from '../src/lib/export';
 import { result } from './fixtures';
 
 describe('toMarkdown', () => {
@@ -72,5 +72,48 @@ describe('copyText', () => {
     Object.defineProperty(document, 'execCommand', { value: exec, configurable: true });
     await copyText('fallback');
     expect(exec).toHaveBeenCalledWith('copy');
+  });
+});
+
+describe('toPlainText (Export .txt)', () => {
+  it('turns Markdown into readable plain text while keeping tables and citations', () => {
+    const txt = toPlainText(result, 'all', 'Highlight discrepancies');
+    expect(txt).toContain('DOCUMENT ANALYSIS\n=================');
+    expect(txt).toContain('DISCREPANCIES\n-------------');
+    expect(txt).toContain('Highlight discrepancies');
+    expect(txt).not.toMatch(/^#/m);
+    expect(txt).not.toContain('**');
+    expect(txt).toContain('Licence number: possible transposed characters (high) Derived (rule)');
+    expect(txt).toContain('[D1 · p1 · E1✓] [D2 · p1 · E2~]');
+    expect(txt).toContain('| Licence number | ✓ LIC-48213 (E1) | ✗ LIC-48231 (E2) | inconsistent |');
+  });
+
+  it('exports a single section', () => {
+    const txt = toPlainText(result, 'missing');
+    expect(txt.startsWith('MISSING INFORMATION')).toBe(true);
+    expect(txt).not.toContain('DISCREPANCIES');
+  });
+});
+
+describe('exportFileName', () => {
+  it('names the file after the section and date', () => {
+    const d = new Date('2026-11-26T10:00:00Z');
+    expect(exportFileName('all', d)).toBe('analysis-full-2026-11-26.txt');
+    expect(exportFileName('discrepancies', d)).toBe('analysis-discrepancies-2026-11-26.txt');
+  });
+});
+
+describe('downloadText', () => {
+  it('downloads a UTF-8 text blob with the given file name', async () => {
+    const createObjectURL = vi.fn().mockReturnValue('blob:x');
+    const revokeObjectURL = vi.fn();
+    Object.assign(URL, { createObjectURL, revokeObjectURL });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    downloadText('hello', 'a.txt');
+    const blob = createObjectURL.mock.calls[0]![0] as Blob;
+    expect(blob.type).toBe('text/plain;charset=utf-8');
+    expect(await blob.text()).toBe('hello');
+    expect(click).toHaveBeenCalledTimes(1);
+    expect((click.mock.instances[0] as unknown as HTMLAnchorElement).download).toBe('a.txt');
   });
 });

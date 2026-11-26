@@ -101,7 +101,7 @@ doc-workbench/
 │  │  ├─ main.tsx  App.tsx  index.css
 │  │  ├─ lib/{api.ts (typed client), export.ts (Markdown/JSON, clipboard), text.ts (highlight, pre-check)}
 │  │  └─ components/{ui, UploadZone, DocumentList, Composer, ProgressPanel, Results, ComparisonMatrix,
-│  │                 FindingCard, TierBadge, EvidenceChip, EvidenceDrawer, CopyMenu}.tsx
+│  │                 FindingCard, TierBadge, EvidenceChip, EvidenceDrawer, CopyMenu, ExportTxtButton}.tsx
 │  └─ test/{setup.ts, fixtures.ts, api.test.ts, export.test.ts, text.test.ts, components.test.tsx}
 └─ samples/                      # synthetic corpus (see §10)
    ├─ application_form.pdf  accountant_letter.txt  financials_2025.csv  licence_certificate.png
@@ -514,7 +514,7 @@ The generator lives in `server/` because `pdfkit` and `sharp` are server dev-dep
 
 ---
 
-## 12. Tests (Vitest; `pnpm test` runs 162 tests offline with the mock LLM and a fake OCR engine)
+## 12. Tests (Vitest; `pnpm test` runs 168 tests offline with the mock LLM and a fake OCR engine)
 
 **Server** (`server/test/`, 126 tests; `helpers.ts` builds the app with in-memory SQLite, a temp storage dir and the fake OCR engine):
 
@@ -534,14 +534,14 @@ The generator lives in `server/` because `pdfkit` and `sharp` are server dev-dep
 | `infra.test.ts` | Config defaults and validation, `BlobStore` (permissions, key safety), repository persistence and cascade, interrupted analyses |
 | `api.test.ts` | Supertest end-to-end: mixed valid and invalid upload with per-file reasons, page text, delete removes the file, rejected files are not stored. Analysis finds **all golden findings**, and **every finding's evidence resolves to an analysed document**. Injection warning; Case B; custom-instruction plan; request validation; **Ollama unreachable → still completes with rule-based fallback** |
 
-**Web** (`web/test/`, 36 tests; jsdom + Testing Library):
+**Web** (`web/test/`, 42 tests; jsdom + Testing Library):
 
 | File | Proves |
 |---|---|
-| `export.test.ts` | Markdown export (tables, citations, tiers, sections, escaping), JSON section export with the cited evidence, clipboard and fallback |
+| `export.test.ts` | Markdown export (tables, citations, tiers, sections, escaping), plain-text (.txt) export, file naming and download, JSON section export with the cited evidence, clipboard and fallback |
 | `text.test.ts` | Highlight splitting (offsets, quote fallback, clamping), upload pre-check, byte formatting |
 | `api.test.ts` | Response validation against the contract, server error messages, network errors, multipart upload, 204 |
-| `components.test.tsx` | `TierBadge`, `FindingCard`, `ComparisonMatrix` (filtering, evidence clicks), `CopyMenu`, `DocumentList`, `Composer`, `ProgressPanel`, `Results` tabs, `EvidenceDrawer` (highlight, unverified warning, Escape) |
+| `components.test.tsx` | `TierBadge`, `FindingCard`, `ComparisonMatrix` (filtering, evidence clicks), `CopyMenu`, `ExportTxtButton`, `DocumentList`, `Composer`, `ProgressPanel`, `Results` tabs, `EvidenceDrawer` (highlight, unverified warning, Escape) |
 
 ---
 
