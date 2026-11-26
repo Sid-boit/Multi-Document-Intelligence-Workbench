@@ -316,7 +316,7 @@ The LLM stage schemas (`shared/src/llm.ts`) are compact and use aliases, chunk r
   | `compare_all` | generic set + `licence_issue_date` |
   | `form_vs_supporting` | generic set: `applicant_name`, `company_name`, `company_number`, `address`, `licence_number`, `annual_revenue`, `application_date`, `licence_expiry`, `signature_date` |
   | `key_dates_financials` | dates + `annual_revenue`, `net_profit`, `total_assets`, `total_liabilities` |
-  | `financial_position` | `company_name`, `financial_year`, revenue, profit, assets, liabilities (one company per document) |
+  | `financial_position` | `company_name`, `financial_year`, revenue, profit, assets, liabilities (one company per document). `comparisonMode: side_by_side` |
   | `identity_discrepancies` | names, address, licence number and expiry, revenue |
 
 - A **custom instruction** gets one LLM call that returns `{ attributes: [{ key, label, valueType, required }] }` (max 15). `sanitizePlan` normalises the keys, maps known fields onto the library (`enrichAttribute`), infers better types for attributes the model typed as `text`, and removes duplicates. If the call fails, the generic fallback plan is used and a warning is added.
@@ -361,7 +361,8 @@ The LLM stage schemas (`shared/src/llm.ts`) are compact and use aliases, chunk r
   | identifier | uppercase, strip separators | equal → match; one adjacent swap → `identifier.transposition` (high); one char → `identifier.typo`; else `identifier.different` |
   | text/number | case-fold, or parse a number | equality, else `text.mismatch` / `number.mismatch` |
 
-- **Clustering** (`compareAttribute`): values are grouped by equivalence. The largest group is the reference, and the first selected document wins ties. Every other group gives one **derived** discrepancy, with evidence roles `supports` (reference) and `contradicts` (outlier).
+- **Comparison mode** (`AnalysisPlan.comparisonMode`): `consistency` (default: documents should agree) or `side_by_side` (documents describe different entities, as in `financial_position`). In side-by-side mode cells are `reported` / `missing`, rows are `compared` / `partial` / `not_found`, no discrepancies are derived, and the synthesis prompt asks for a comparison rather than reconciliation.
+- **Clustering** (`compareAttribute`, consistency mode): values are grouped by equivalence. The largest group is the reference, and the first selected document wins ties. Every other group gives one **derived** discrepancy, with evidence roles `supports` (reference) and `contradicts` (outlier).
 - **`checkExpiry`**: for date attributes whose key contains `expir`, `date.expired` is raised. It is high severity if the expiry is before the application date, and medium if it is before the review date (today).
 - **Missing information (derived)**:
   - `form.blank_field`: a blank `Label:` / `Label: ____` line, cited with role `expected_in`.
@@ -514,9 +515,9 @@ The generator lives in `server/` because `pdfkit` and `sharp` are server dev-dep
 
 ---
 
-## 12. Tests (Vitest; `pnpm test` runs 168 tests offline with the mock LLM and a fake OCR engine)
+## 12. Tests (Vitest; `pnpm test` runs 174 tests offline with the mock LLM and a fake OCR engine)
 
-**Server** (`server/test/`, 126 tests; `helpers.ts` builds the app with in-memory SQLite, a temp storage dir and the fake OCR engine):
+**Server** (`server/test/`, 130 tests; `helpers.ts` builds the app with in-memory SQLite, a temp storage dir and the fake OCR engine):
 
 | File | Proves |
 |---|---|
@@ -534,7 +535,7 @@ The generator lives in `server/` because `pdfkit` and `sharp` are server dev-dep
 | `infra.test.ts` | Config defaults and validation, `BlobStore` (permissions, key safety), repository persistence and cascade, interrupted analyses |
 | `api.test.ts` | Supertest end-to-end: mixed valid and invalid upload with per-file reasons, page text, delete removes the file, rejected files are not stored. Analysis finds **all golden findings**, and **every finding's evidence resolves to an analysed document**. Injection warning; Case B; custom-instruction plan; request validation; **Ollama unreachable → still completes with rule-based fallback** |
 
-**Web** (`web/test/`, 42 tests; jsdom + Testing Library):
+**Web** (`web/test/`, 44 tests; jsdom + Testing Library):
 
 | File | Proves |
 |---|---|

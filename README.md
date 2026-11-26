@@ -18,6 +18,11 @@ AI runs locally on **Ollama**, so documents never leave the machine. A determini
 
 ![Workbench screenshot](docs/screenshot.png)
 
+**Demo:**
+- Live: https://ericaceous-christiana-proscribable.ngrok-free.dev (available while the presenter's machine is running the app and ngrok).
+- Screenshots of every template from real runs: [`demo/DEMO.md`](demo/DEMO.md).
+- Presenter script: [`demo/TRANSCRIPT.md`](demo/TRANSCRIPT.md).
+
 ---
 
 ## Quick start
@@ -83,7 +88,7 @@ pnpm dev                        # API on :4000, web app on http://localhost:5173
   | Compare all documents | Compare the information across all uploaded documents. |
   | Form vs supporting docs | Identify inconsistencies between the application form and supporting documents. |
   | Dates, money & gaps | Extract key dates, obligations, financial values, and missing information. |
-  | Financial position | Compare the financial position of the companies represented in the documents. |
+  | Financial position | Compare the financial position of the companies represented in the documents. (Runs **side by side**: the documents describe different companies, so differences are compared, not flagged as discrepancies.) |
   | Names, addresses, licences, revenue | Highlight discrepancies in names, addresses, licence details, or revenue figures. |
 
 - **Each document is analysed on its own first, then compared across documents.** Documents are never merged into one prompt.
@@ -95,7 +100,7 @@ pnpm dev                        # API on :4000, web app on http://localhost:5173
 | Tab | What it shows |
 |---|---|
 | **Overview** | Stats (documents, discrepancies, high-severity count, missing items, % of evidence verified), the consolidated summary (labelled *AI interpretation*), and key points with sources |
-| **Comparison** | A matrix of attributes × documents. Each cell is ✓ match, ≈ equivalent (e.g. "£1.18m" vs "1,180,000"), ✗ conflict or – not found. There's an "Inconsistent only" filter, and clicking a value opens its source |
+| **Comparison** | A matrix of attributes × documents. Each cell is ✓ match, ≈ equivalent (e.g. "£1.18m" vs "1,180,000"), ✗ conflict or – not found. There's an "Inconsistent only" filter, and clicking a value opens its source. In side-by-side mode (Financial position) values are shown as • reported, with no conflicts implied |
 | **Discrepancies** | Sorted by severity. Each shows the rule that found it (e.g. `identifier.transposition`), the AI's review (confirmed / benign / needs review) and the sources on both sides |
 | **Missing info** | Blank form fields (e.g. an empty signature date) and required items that no document states, listing the documents checked |
 | **Key values** | Every extracted value: plan attributes plus dates, amounts, identifiers and form fields found by rules |
@@ -137,6 +142,7 @@ pnpm dev                        # API on :4000, web app on http://localhost:5173
    - Values are normalised: amounts, British dates, names without titles or initials, company names without "Ltd/Limited", addresses split into house number and postcode, identifiers.
    - Values are then grouped by equivalence. The largest group is the reference, and each conflicting group becomes a *derived* discrepancy citing both sides.
    - Extra rules flag expired licences and blank form fields.
+   - For templates whose documents describe *different* entities (Financial position), the comparison runs **side by side**: values are listed per document, and no discrepancies are derived.
 7. **Summarise.** The AI receives only the structured comparison, the rule findings and the observations (with evidence handles), never the raw documents. It writes the summary and reviews each rule finding. Any citation of a handle that doesn't exist is stripped, and a claim left without evidence is dropped and listed under *Warnings*.
 8. **Show.** The result is validated (every cited handle must exist and belong to an analysed document) and saved. The page polls every 1.5 s, shows progress, then shows the results tabs. Clicking any source opens the evidence viewer at the highlighted text.
 
@@ -243,7 +249,7 @@ samples/           synthetic documents, expected.json (golden findings)
 
 ## Testing
 
-`pnpm test` runs **168 tests**: 126 for the server and 42 for the web app. They are fully offline, using the mock LLM and a fake OCR engine.
+`pnpm test` runs **174 tests**: 130 for the server and 44 for the web app. They are fully offline, using the mock LLM and a fake OCR engine.
 
 | Area | Files |
 |---|---|
@@ -357,7 +363,9 @@ The repository is organised so each layer is added as its own commit:
 | 5 | `86f6d62` feat(web): add React workbench UI with traceable findings and copy/export | `web/` — React UI, typed API client, export helpers, 36 tests — 28 files |
 | 6 | `a041945` Readme files | `README.md` (full), `docs/screenshot.png`, `requirements.md` |
 | 7 | `2a28999` docs: complete AI disclosure and add commit history to README | README disclosure section and this commit history; time-box references removed from the planning documents |
-| 8 | *(latest)* feat(web): add plain-text (.txt) export beside the copy menu | `ExportTxtButton`, `toPlainText` / `downloadText` in `web/src/lib/export.ts`, 6 new tests; README, plan and requirements updated |
+| 8 | `7e86be3` feat(web): add plain-text (.txt) export beside the copy menu | `ExportTxtButton`, `toPlainText` / `downloadText` in `web/src/lib/export.ts`, 6 new tests; README, plan and requirements updated |
+| 9 | fix(analysis): side-by-side mode for comparing different entities; precise field check for quoted rows | `comparisonMode` in the plan (Financial position runs side by side, no false discrepancies), misattribution check narrowed to the value's own field, dropped-observation warnings grouped per document, prompt v3, 6 new tests |
+| 10 | docs(demo): add demo walkthrough, transcript and screenshots | `demo/DEMO.md`, `demo/TRANSCRIPT.md`, `demo/screenshots/` (18 screenshots from real runs), `demo/run-summary.json` |
 
 Notes:
 - Commits 3–5 depend on each other in order: `server/` imports `shared/`, and the end-to-end server tests read `samples/`, so the full test suite passes from commit 4 onwards (backend) and commit 5 onwards (whole repo).

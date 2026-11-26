@@ -1,0 +1,128 @@
+[
+  {
+    "key": "02-form-vs-supporting",
+    "id": "1a1c310c-788d-4f4a-8ba8-524c302cda87",
+    "status": "completed",
+    "durationS": 153,
+    "discrepancies": [
+      "identifier.transposition|Licence number: possible transposed characters|needs_review",
+      "name.spelling_variant|Applicant name: spelling differs|confirmed",
+      "address.house_number|Business address: house number differs|confirmed",
+      "address.postcode|Business address: postcode differs|confirmed",
+      "money.mismatch|Annual revenue: amounts differ|confirmed",
+      "date.expired|Licence expiry date: expired|confirmed"
+    ],
+    "missing": [
+      "\"Signature\" is blank",
+      "\"Signature date\" is blank",
+      "Licence Number Missing in Financials and Bank Ref",
+      "Company Number Not Provided in Supporting Docs",
+      "Revenue Terminology Mismatch in D2",
+      "Address Label Discrepancy in D4"
+    ],
+    "warnings": [
+      "D2: 1 AI observation(s) were dropped because their quotes were not found in the document (\"Address Inconsistency (Postcode)\").",
+      "D4: the AI reported \"01/04/2023\" as application date, but the document labels it \"Issue date\"; it was ignored."
+    ],
+    "summary": "Analysis of the application package reveals significant inconsistencies between the primary application form (D1) and supporting documents regarding key identifiers. The applicant's name varies across sources, with D2 spelling it 'Jonathon' while others use 'Jonathan', suggesting a potential clerical error or identity mismatch. Furthermore, critical address details conflict, showing discrepancies in both house numbers and postcodes between the accountant letter, bank reference, and other forms. Financial data also presents an issue where the application form lists revenue at £1.25m, whereas financial statements and the accountant's note indicate approximately £1.18m.",
+    "comparison": [
+      "Applicant name: inconsistent :: Jonathan A. Smith | Jonathon Smith | – | – | Jonathan Smith",
+      "Company name: consistent :: Northwind Fabrication Ltd | Northwind Fabrications Limited | Northwind Fabrication Ltd | Northwind Fabrication Ltd | Northwind Fabrications Limited",
+      "Company number: partial :: 09876543 | – | – | – | –",
+      "Business address: inconsistent :: 14 Harbour Road, Bristol BS1 4QA | 41 Harbour Road, Bristol BS1 4QA | – | 14 Harbour Road, Bristol BS1 4QA | 14 Harbour Rd, Bristol BS1 4QB",
+      "Licence number: inconsistent :: LIC-48213 | LIC-48213 | – | LIC-48231 | –",
+      "Annual revenue: inconsistent :: £1,250,000 | approximately £1.18m | 1180000 | – | –",
+      "Application date: partial :: 03/02/2026 | – | – | – | –",
+      "Licence expiry date: partial :: – | – | – | 31/03/2026 | –",
+      "Signature date: partial :: – | 20 January 2026 | – | – | –"
+    ]
+  },
+  {
+    "key": "03-dates-money-gaps",
+    "id": "d8167165-f675-4cf0-b0e0-f8bd1b79851c",
+    "status": "completed",
+    "durationS": 163,
+    "discrepancies": [
+      "money.mismatch|Annual revenue: amounts differ|confirmed",
+      "date.expired|Licence expiry date: expired|confirmed"
+    ],
+    "missing": [
+      "\"Signature\" is blank",
+      "\"Signature date\" is blank",
+      "Application Date Missing",
+      "Licence Issue Date Missing in Most Docs",
+      "Total Assets Missing in Most Docs",
+      "Total Liabilities Missing in Most Docs",
+      "Net Profit Missing in Most Docs"
+    ],
+    "warnings": [
+      "D3: 1 AI observation(s) were dropped because their quotes were not found in the document (\"Multiple Financial Years Present\")."
+    ],
+    "summary": "Analysis of the provided documents reveals a significant discrepancy regarding annual revenue, where D1 reports £1.25m while D2 and D3 indicate approximately £1.18m (F53). Additionally, critical compliance issues have been identified in D4, specifically that its licence expired on 31/03/2026 prior to the current review date of late November 2026 (F54), alongside missing signature details in D1 (F55, F56). While financial figures for net profit and total assets are consistent across available sources E27/E28 and E15/E29 respectively, several key dates such as the application date remain unrecorded in most documents. The review also highlights formatting inconsistencies, including raw integer values without currency symbols in D3 (E38) and terminology mismatches regarding revenue labels.",
+    "comparison": [
+      "Application date: partial :: 03/02/2026 | – | – | – | –",
+      "Licence issue date: partial :: – | – | – | 01/04/2023 | –",
+      "Licence expiry date: partial :: – | – | – | 31/03/2026 | –",
+      "Signature date: not_found :: – | – | – | – | –",
+      "Annual revenue: inconsistent :: £1,250,000 | approximately £1.18m | 1180000 | – | –",
+      "Net profit: partial :: – | £96,000 | 96000 | – | –",
+      "Total assets: partial :: – | – | 2150000 | – | –",
+      "Total liabilities: partial :: – | – | 1340000 | – | –"
+    ]
+  },
+  {
+    "key": "04-financial-position",
+    "id": "1b510b90-ddd3-4264-be76-785cf176a366",
+    "status": "completed",
+    "durationS": 87,
+    "discrepancies": [],
+    "missing": [
+      "Single Company Constraint"
+    ],
+    "warnings": [
+      "D1: 3 AI observation(s) were dropped because their quotes were not found in the document (\"Year-over-Year Growth in Revenue\", \"Year-over-Year Growth in Net Profit\", \"Increase in Total Assets and Liabilities\").",
+      "D2: 4 AI observation(s) were dropped because their quotes were not found in the document (\"Year-over-Year Revenue Growth\", \"Improving Profitability Ratio\", \"Asset Accumulation\", \"Liability Reduction\")."
+    ],
+    "summary": "This side-by-side analysis compares the FY2025 financial data for Northwind Fabrication Ltd (D1) and Acme Widgets Ltd (D2). While both documents report figures in a consistent integer format, they represent entirely separate entities rather than alternative views of the same company. Consequently, significant discrepancies exist between their revenues ($1.18M vs $2.45M), net profits ($96k vs $310k), and total assets ($2.15M vs $3.9M). These differences reflect distinct business scales rather than data errors or inconsistencies within a single reporting framework.",
+    "comparison": [
+      "Company name: compared :: Northwind Fabrication Ltd | Acme Widgets Ltd",
+      "Financial year: compared :: FY2025 | FY2025",
+      "Annual revenue: compared :: 1180000 | 2450000",
+      "Net profit: compared :: 96000 | 310000",
+      "Total assets: compared :: 2150000 | 3900000",
+      "Total liabilities: compared :: 1340000 | 1650000"
+    ]
+  },
+  {
+    "key": "05-names-addresses-licences-revenue",
+    "id": "b0362fa6-8b00-4498-820f-aee5493b9bf3",
+    "status": "completed",
+    "durationS": 152,
+    "discrepancies": [
+      "identifier.transposition|Licence number: possible transposed characters|needs_review",
+      "name.spelling_variant|Applicant name: spelling differs|confirmed",
+      "address.house_number|Business address: house number differs|confirmed",
+      "address.postcode|Business address: postcode differs|confirmed",
+      "money.mismatch|Annual revenue: amounts differ|confirmed",
+      "date.expired|Licence expiry date: expired|needs_review"
+    ],
+    "missing": [
+      "\"Signature\" is blank",
+      "\"Signature date\" is blank"
+    ],
+    "warnings": [
+      "D6 (injection_letter.txt): This document contains text that looks like instructions to an AI system. It is treated as data only; review its findings with care.",
+      "D2: 2 AI observation(s) were dropped because their quotes were not found in the document (\"Address Discrepancy in Postal Code\", \"Accountant Signature Date vs Letterhead Address\").",
+      "D6: 1 AI observation(s) were dropped because their quotes were not found in the document (\"Incomplete Data Extraction\")."
+    ],
+    "summary": "Analysis reveals significant inconsistencies in applicant details across documents D1 through D6. Specifically, there are conflicting spellings for the applicant's name (Jonathan vs Jonathon), discrepancies in business addresses regarding house numbers and postcodes between D2 and D5 compared to D1/D4, and a notable variance of 7% in reported annual revenue figures. Additionally, document D4 indicates an expired licence date relative to the review period, while several key fields such as signatures are missing from the application form.",
+    "comparison": [
+      "Applicant name: inconsistent :: Jonathan A. Smith | Jonathon Smith | – | – | Jonathan Smith | Jonathan A. Smith",
+      "Company name: consistent :: Northwind Fabrication Ltd | Northwind Fabrications Limited | Northwind Fabrication Ltd | Northwind Fabrication Ltd | Northwind Fabrications Limited | Northwind Fabrication Ltd",
+      "Business address: inconsistent :: 14 Harbour Road, Bristol BS1 4QA | 41 Harbour Road, Bristol BS1 4QA | – | 14 Harbour Road, Bristol BS1 4QA | 14 Harbour Rd, Bristol BS1 4QB | –",
+      "Licence number: inconsistent :: LIC-48213 | LIC-48213 | – | LIC-48231 | – | –",
+      "Licence expiry date: partial :: – | – | – | 31/03/2026 | – | –",
+      "Annual revenue: inconsistent :: £1,250,000 | approximately £1.18m | 1180000 | – | – | –"
+    ]
+  }
+]
